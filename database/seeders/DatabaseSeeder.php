@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Company;
+use App\Models\RefRole;
 use App\Models\User;
 use App\Models\Outlet;
 use App\Models\DiningTable;
@@ -23,32 +24,73 @@ class DatabaseSeeder extends Seeder
             'is_active' => true
         ]);
 
+        RefRole::create([
+            'id' => 1,
+            'role_name' => 'SUPERADMIN',
+            'description' => 'System Super Administrator',
+            'is_active' => true,
+            'seq' => 1,
+        ]);
+
+        RefRole::create([
+            'id' => 2,
+            'role_name' => 'OWNER',
+            'description' => 'Restaurant Owner',
+            'is_active' => true,
+            'seq' => 2,
+        ]);
+
+        RefRole::create([
+            'id' => 3,
+            'role_name' => 'CASHIER',
+            'description' => 'Cashier',
+            'is_active' => true,
+            'seq' => 3,
+        ]);
+
+        RefRole::create([
+            'id' => 4,
+            'role_name' => 'KITCHEN',
+            'description' => 'Kitchen Staff',
+            'is_active' => true,
+            'seq' => 4,
+        ]);
+
         // 2. Buat Karyawan & Owner untuk Company tersebut
         User::create([
             'company_id' => $company->id,
-            'username' => 'owner',
-            'fullname' => 'Budi Owner',
-            'email' => 'owner@smartdine.com',
-            'password' => Hash::make('password123'),
-            'role' => 'OWNER',
+            'username'   => 'superadmin',
+            'fullname'   => 'Super Admin',
+            'email'      => 'admin@smartdine.com',
+            'password'   => Hash::make('password123'),
+            'role_id'    => 1,
         ]);
 
         User::create([
             'company_id' => $company->id,
-            'username' => 'cashier',
-            'fullname' => 'Siti Kasir',
-            'email' => 'cashier@smartdine.com',
-            'password' => Hash::make('password123'),
-            'role' => 'CASHIER',
+            'username'   => 'owner',
+            'fullname'   => 'Budi Owner',
+            'email'      => 'owner@smartdine.com',
+            'password'   => Hash::make('password123'),
+            'role_id'    => 2,
         ]);
 
         User::create([
             'company_id' => $company->id,
-            'username' => 'kitchen',
-            'fullname' => 'Chef Juna Kitchen',
-            'email' => 'kitchen@smartdine.com',
-            'password' => Hash::make('password123'),
-            'role' => 'KITCHEN',
+            'username'   => 'cashier',
+            'fullname'   => 'Siti Kasir',
+            'email'      => 'cashier@smartdine.com',
+            'password'   => Hash::make('password123'),
+            'role_id'    => 3,
+        ]);
+
+        User::create([
+            'company_id' => $company->id,
+            'username'   => 'kitchen',
+            'fullname'   => 'Chef Juna Kitchen',
+            'email'      => 'kitchen@smartdine.com',
+            'password'   => Hash::make('password123'),
+            'role_id'    => 4,
         ]);
 
         // 3. Buat Outlet Cabang
@@ -87,36 +129,36 @@ class DatabaseSeeder extends Seeder
 
         // 6. Buat Menu Makanan & Minuman
         Menu::create([
-            'company_id' => $company->id,
-            'category_id' => $makanan->id,
-            'name' => 'Nasi Goreng Spesial',
-            'description' => 'Nasi goreng dengan telur, ayam suwir, dan kerupuk',
-            'price' => 25000,
-            'cooking_time' => 10,
-            'stock' => 50,
-            'is_available' => true
+            'company_id'    => $company->id,
+            'category_id'   => $makanan->id,
+            'name'          => 'Nasi Goreng Spesial',
+            'description'   => 'Nasi goreng dengan telur, ayam suwir, dan kerupuk',
+            'price'         => 25000,
+            'cooking_time'  => 10,
+            'stock'         => 50,
+            'is_available'  => true,
         ]);
 
         Menu::create([
-            'company_id' => $company->id,
-            'category_id' => $makanan->id,
-            'name' => 'Mie Goreng Jawa',
-            'description' => 'Mie goreng bumbu jawa otentik pedas manis',
-            'price' => 23000,
-            'cooking_time' => 8,
-            'stock' => 40,
-            'is_available' => true
+            'company_id'    => $company->id,
+            'category_id'   => $makanan->id,
+            'name'          => 'Mie Goreng Jawa',
+            'description'   => 'Mie goreng bumbu jawa otentik pedas manis',
+            'price'         => 23000,
+            'cooking_time'  => 8,
+            'stock'         => 40,
+            'is_available'  => true,
         ]);
 
         Menu::create([
-            'company_id' => $company->id,
-            'category_id' => $minuman->id,
-            'name' => 'Es Teh Manis',
-            'description' => 'Teh seduh segar dengan es batu kristal',
-            'price' => 5000,
-            'cooking_time' => 2,
-            'stock' => 100,
-            'is_available' => true
+            'company_id'    => $company->id,
+            'category_id'   => $minuman->id,
+            'name'          => 'Es Teh Manis',
+            'description'   => 'Teh seduh segar dengan es batu kristal',
+            'price'         => 5000,
+            'cooking_time'  => 2,
+            'stock'         => 100,
+            'is_available'  => true,
         ]);
     }
 }

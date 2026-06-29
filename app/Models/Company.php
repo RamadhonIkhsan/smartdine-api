@@ -18,8 +18,7 @@ class Company extends Model
         return $this->hasMany(User::class);
     }
 
-    public function categories(): \Illuminate\Database\Eloquent\Relations\HasMany 
-    {
+    public function categories(): HasMany {
         return $this->hasMany(Category::class);
     }
 }

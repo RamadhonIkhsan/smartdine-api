@@ -14,16 +14,11 @@ return new class extends Migration
         Schema::table('users', function (Blueprint $table) {
             $table->foreignId('company_id')
                 ->nullable()
-                ->after('id')
+                ->after('password')
                 ->constrained('companies')
                 ->cascadeOnDelete();
 
-            $table->enum('role', [
-                'SUPERADMIN',
-                'OWNER',
-                'CASHIER',
-                'KITCHEN'
-            ])->default('CASHIER');
+            $table->foreignId('role_id')->nullable()->after('company_id')->constrained('ref_role')->cascadeOnDelete();
         });
     }
 

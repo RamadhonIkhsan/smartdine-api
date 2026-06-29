@@ -11,11 +11,19 @@ class Menu extends Model
     protected $table = 'menus';
     protected $fillable = ['company_id', 'category_id', 'name', 'description', 'image_url', 'price', 'cooking_time', 'stock', 'is_available'];
 
-    protected static function booted(): void {
-        static::addGlobalScope(new TenantScope);
+    /**
+     * Relasi ke Category (Menu ini masuk kategori apa)
+     */
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(Category::class);
     }
 
-    public function category(): BelongsTo {
-        return $this->belongsTo(Category::class);
+    /**
+     * Relasi ke Company (Menu ini milik perusahaan apa)
+     */
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class);
     }
 }

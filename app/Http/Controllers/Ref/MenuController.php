@@ -4,39 +4,39 @@ namespace App\Http\Controllers\Ref;
 
 use App\Http\Controllers\Controller;
 use App\Models\Menu;
-use App\Models\Company;
+use App\Models\Category;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rule;
 
 class MenuController extends Controller
 {
     /**
-     * 1. GET ALL - Dikelompokkan berdasarkan Perusahaan -> Kategori -> Menu
+     * GET ALL: Menampilkan daftar menu.
+     * Bisa difilter dengan ?company_id=1 atau ?category_id=1
      */
-    public function index()
+    public function index(Request $request)
     {
-        $user = Auth::user();
+        $query = Menu::query();
 
-        // Jika SUPERADMIN (Platform Owner), munculkan semua perusahaan
-        if ($user->role === 'SUPERADMIN') {
-            $tree = Company::with(['categories' => function ($q) {
-                $q->orderBy('sort_order', 'asc')->with('menus');
-            }])->get();
-        } else {
-            // Jika OWNER/KARYAWAN, hanya munculkan perusahaan mereka sendiri
-            $tree = Company::with(['categories' => function ($q) {
-                $q->orderBy('sort_order', 'asc')->with('menus');
-            }])->where('id', $user->company_id)->get();
+        if ($request->has('company_id')) {
+            $query->where('company_id', $request->company_id);
         }
 
-        return $this->successResponse($tree, 'Berhasil');
+        if ($request->has('category_id')) {
+            $query->where('category_id', $request->category_id);
+        }
+
+        $menus = $query->get();
+        return $this->successResponse($menus, 'Berhasil mengambil daftar menu');
     }
 
+    /**
+     * GET BY ID: Menampilkan satu menu spesifik
+     */
     public function show($id)
     {
-        $menu = Menu::with('category')->find($id);
+        // $menu = Menu::with(['company', 'category'])->find($id);
+        $menu = Menu::find($id);
 
         if (!$menu) {
             return $this->errorResponse('Menu tidak ditemukan', 404);
@@ -46,44 +46,43 @@ class MenuController extends Controller
     }
 
     /**
-     * 3. CREATE MENU - Diperketat wajib sesuai Company & Kategori yang sah
+     * CREATE / STORE: Menambahkan menu baru
      */
     public function store(Request $request)
     {
-        $userCompanyId = Auth::user()->company_id;
-
         $validator = Validator::make($request->all(), [
-            // Validasi agar category_id yang dipilih HARUS milik company user yang sedang login
-            'category_id' => [
-                'required',
-                Rule::exists('categories', 'id')->where(function ($query) use ($userCompanyId) {
-                    $query->where('company_id', $userCompanyId);
-                }),
-            ],
+            'company_id' => 'required|exists:companies,id',
+            'category_id' => 'required|exists:categories,id',
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
+            'image_url' => 'nullable|string',
             'price' => 'required|numeric|min:0',
             'cooking_time' => 'required|integer|min:1',
             'stock' => 'required|integer|min:0',
             'is_available' => 'boolean'
-        ], [
-            'category_id.exists' => 'Kategori tidak valid atau bukan milik perusahaan Anda.'
         ]);
 
         if ($validator->fails()) {
-            return $this->errorResponse('Validasi gagal', 400, $validator->errors());
+            return $this->errorResponse($validator->errors()->first(), 400, $validator->errors());
         }
 
+        // Validasi Ekstra: Pastikan category_id benar-benar milik company_id tersebut
+        $category = Category::find($request->category_id);
+        if ($category && $category->company_id != $request->company_id) {
+            return $this->errorResponse('Kategori tidak valid untuk perusahaan ini.', 400);
+        }
+
+        // Set default is_available ke true jika tidak dikirim
         $data = $request->all();
-        $data['company_id'] = $userCompanyId;
+        $data['is_available'] = $request->input('is_available', true);
 
         $menu = Menu::create($data);
 
-        return $this->successResponse($menu, 'Menu berhasil ditambahkan', 201);
+        return $this->successResponse($menu, 'Menu berhasil ditambahkan', 200);
     }
 
     /**
-     * UPDATE MENU
+     * UPDATE: Mengubah data menu
      */
     public function update(Request $request, $id)
     {
@@ -93,33 +92,38 @@ class MenuController extends Controller
             return $this->errorResponse('Menu tidak ditemukan', 404);
         }
 
-        $userCompanyId = Auth::user()->company_id;
-
         $validator = Validator::make($request->all(), [
-            'category_id' => [
-                Rule::exists('categories', 'id')->where(function ($query) use ($userCompanyId) {
-                    $query->where('company_id', $userCompanyId);
-                }),
-            ],
+            'category_id' => 'exists:categories,id',
             'name' => 'string|max:255',
             'description' => 'nullable|string',
+            'image_url' => 'nullable|string',
             'price' => 'numeric|min:0',
             'cooking_time' => 'integer|min:1',
             'stock' => 'integer|min:0',
             'is_available' => 'boolean'
-        ], [
-            'category_id.exists' => 'Kategori tidak valid atau bukan milik perusahaan Anda.'
         ]);
 
         if ($validator->fails()) {
-            return $this->errorResponse('Validasi gagal', 400, $validator->errors());
+            return $this->errorResponse($validator->errors()->first(), 400, $validator->errors());
         }
 
-        $menu->update($request->all());
+        // Jika mengubah kategori, pastikan kategori baru masih di dalam company yang sama
+        if ($request->has('category_id')) {
+            $category = Category::find($request->category_id);
+            if ($category && $category->company_id != $menu->company_id) {
+                return $this->errorResponse('Kategori yang dipilih bukan milik perusahaan ini.', 400);
+            }
+        }
+
+        // Amankan agar company_id tidak bisa diubah sembarangan via update
+        $menu->update($request->except('company_id'));
 
         return $this->successResponse($menu, 'Menu berhasil diperbarui');
     }
 
+    /**
+     * DELETE / DESTROY: Menghapus menu
+     */
     public function destroy($id)
     {
         $menu = Menu::find($id);

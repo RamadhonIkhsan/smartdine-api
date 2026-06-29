@@ -1,8 +1,9 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Ref\MenuController;
+use App\Http\Controllers\Ref\CompanyController;
 use App\Http\Controllers\Ref\CategoryController;
+use App\Http\Controllers\Ref\MenuController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\TableController;
 use App\Http\Controllers\OrderController;
@@ -30,6 +31,7 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
     
     // API Khusus Management (Admin/Owner)
     Route::prefix('ref')->group(function () {
+        Route::apiResource('companies', CompanyController::class);
         Route::apiResource('categories', CategoryController::class);
         Route::apiResource('menus', MenuController::class);
     });
